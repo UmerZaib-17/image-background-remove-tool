@@ -1,10 +1,10 @@
 repos:
--   repo: https://github.com/psf/black
+-   repo: git@github.com:psf/black.git
     rev: 22.10.0
     hooks:
     - id: black
       language_version: python3.10
--   repo: https://gitlab.com/pycqa/flake8
+-   repo: git@github.com:PyCQA/flake8.git
     rev: 3.9.2
     hooks:
     - id: flake8

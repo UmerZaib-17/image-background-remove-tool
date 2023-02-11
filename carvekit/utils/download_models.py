@@ -83,9 +83,9 @@ MODELS_CHECKSUMS = {
     "yolov4_coco_with_classes.pth": "44b6ec2dd35dc3802bf8c512002f76e00e97bfbc86bc7af6de2fafce229a41b4ca"
     "12c6f3d7589278c71cd4ddd62df80389b148c19b84fa03216905407a107fff",
     "cascadepsp.pth": "3f895f5126d80d6f73186f045557ea7c8eab4dfa3d69a995815bb2c03d564573f36c474f0"
-                      "4d7bf0022a27829f583a1a793b036adf801cb423e41a4831b830122",
+    "4d7bf0022a27829f583a1a793b036adf801cb423e41a4831b830122",
     "isnet.pth": "e996b95c78aefe4573950ce1ed2eec20fa3c869381e9b5233c361a8e1dff09f"
-                 "844f6c054c9cfa55377ae16a4cf55e727926599df0b1b8af65de478eccfac4708"
+    "844f6c054c9cfa55377ae16a4cf55e727926599df0b1b8af65de478eccfac4708",
 }
 
 
@@ -190,14 +190,19 @@ class HuggingFaceCompatibleDownloader(CachedDownloader, ABC):
             try:
                 r = requests.get(hugging_face_url, stream=True)
                 if r.status_code < 400:
-                    with open(cached_path, "wb") as f:
+                    total = int(r.headers.get("content-length", 0))
+                    with open(cached_path, "wb") as f, tqdm.tqdm(
+                        unit="iB",
+                        unit_scale=True,
+                        unit_divisor=1024,
+                        desc="Downloading " + cached_path.name + " model",
+                        colour="blue",
+                        total=total,
+                    ) as bar:
                         r.raw.decode_content = True
-                        for chunk in tqdm.tqdm(
-                            r,
-                            desc="Downloading " + cached_path.name + " model",
-                            colour="blue",
-                        ):
-                            f.write(chunk)
+                        for chunk in r.iter_content(chunk_size=1024):
+                            size = f.write(chunk)
+                            bar.update(size)
                 else:
                     if r.status_code == 404:
                         raise FileNotFoundError(f"Model {file_name} not found!")
