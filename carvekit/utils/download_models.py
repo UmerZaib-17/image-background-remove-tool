@@ -190,14 +190,19 @@ class HuggingFaceCompatibleDownloader(CachedDownloader, ABC):
             try:
                 r = requests.get(hugging_face_url, stream=True)
                 if r.status_code < 400:
-                    with open(cached_path, "wb") as f:
+                    total = int(r.headers.get("content-length", 0))
+                    with open(cached_path, "wb") as f, tqdm.tqdm(
+                        unit="iB",
+                        unit_scale=True,
+                        unit_divisor=1024,
+                        desc="Downloading " + cached_path.name + " model",
+                        colour="blue",
+                        total=total,
+                    ) as bar:
                         r.raw.decode_content = True
-                        for chunk in tqdm.tqdm(
-                            r,
-                            desc="Downloading " + cached_path.name + " model",
-                            colour="blue",
-                        ):
-                            f.write(chunk)
+                        for chunk in r.iter_content(chunk_size=1024):
+                            size = f.write(chunk)
+                            bar.update(size)
                 else:
                     if r.status_code == 404:
                         raise FileNotFoundError(f"Model {file_name} not found!")
